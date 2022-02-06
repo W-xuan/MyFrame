@@ -30,7 +30,7 @@ private:
     uint32_t m_elapse = 0;        //程序启动开始到现在的毫秒数
     uint32_t m_threadId = 0;      //线程ID
     uint32_t m_fiberId = 0;       //协程ID
-    uint32_t m_time;              //时间戳
+    uint32_t m_time = 0;              //时间戳
     std::string m_content;        
 };
 
@@ -86,7 +86,7 @@ private:
 };
 
 //日志器
-class Logger {
+class Logger : public std::enable_shared_from_this<Logger> {
 public:
     typedef std::shared_ptr<Logger> ptr;
 
@@ -114,7 +114,7 @@ private:
 class StdoutLogAppender : public LogAppender {
 public:
     typedef std::shared_ptr<StdoutLogAppender> ptr;
-    virtual void log(LogLevel::Level level, LogEvent::ptr event) override;
+    void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
 private:
 };
 
@@ -123,7 +123,7 @@ class FileLogAppender : public LogAppender {
 public:
     typedef std::shared_ptr<FileLogAppender> ptr;
     FileLogAppender(const std::string& filename);
-    void log(LogLevel::Level level, LogEvent::ptr event) override;
+    void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
 
     //重新打开文件, 文件打开成功返回true
     bool reopen();
