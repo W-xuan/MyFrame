@@ -104,17 +104,19 @@ public:
 class StringFormatItem : public LogFormatter::FormatItem {
 public:
     StringFormatItem(const std::string& str)
-        :FormatItem(str), m_string(str) {}
+        :m_string(str) {}
     void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override{
         os << m_string;
     } 
+private:
+    std::string m_string;
 };
 
-LogEvent(const char* file, int32_t m_line, uint32_t getElapse
+LogEvent::LogEvent(const char* file, int32_t line, uint32_t elapse
         , uint32_t thread_id, uint32_t fiber_id, uint64_t time)
         :m_file(file)
         ,m_line(line)
-        ,m_elpase(elapse)
+        ,m_elapse(elapse)
         ,m_threadId(thread_id)
         ,m_fiberId(fiber_id)
         ,m_time(time) {
@@ -202,7 +204,7 @@ void StdoutLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level leve
 
 LogFormatter::LogFormatter(const std::string& pattern) 
     :m_pattern(pattern) {
-
+    init();
 }
 
 std::string LogFormatter::format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) {
@@ -271,7 +273,7 @@ void LogFormatter::init() {
 
         if (fmt_status == 0) {
             if (!nstr.empty()) {
-                vec.push_back(std::make_tuple(nstr, std::string[], 0));
+                vec.push_back(std::make_tuple(nstr, std::string(), 0));
                 nstr.clear();
             }
             vec.push_back(std::make_tuple(str, fmt, 1));
@@ -293,7 +295,7 @@ void LogFormatter::init() {
         XX(m, MessageFormatItem),           //m:消息
         XX(p, LevelFormatItem),             //p:日志级别
         XX(r, ElapseFormatItem),            //r:累计毫秒数
-        XX(c, NameFormatItem),              //c:日志名称
+//      XX(c, NameFormatItem),              //c:日志名称
         XX(t, ThreadIdFormatItem),          //t:线程id
         XX(n, NewLineFormatItem),           //n:换行
         XX(d, DateTimeFormatItem),          //d:时间

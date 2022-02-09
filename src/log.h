@@ -12,6 +12,22 @@
 namespace MyFrame {
 
 class Logger;
+//日志级别
+class LogLevel {
+public:
+    enum Level {
+        UNKOWN = 0,
+        DEBUG = 1,
+        INFO = 2,
+        WARN = 3,
+        ERROR = 4,
+        FATAL = 5,
+    };
+
+    static const char* ToString(LogLevel::Level level);
+    static LogLevel::Level FromString(const std::string& str);
+};
+
 //日志事件
 class LogEvent {
 public:
@@ -23,7 +39,7 @@ public:
     int32_t getLine() const { return m_line; }
     uint32_t getElapse() const { return m_elapse; }
     uint32_t getThreadId() const { return m_fiberId; }
-    uint32_t getFiberId() const {return m_fiberId; }
+    uint32_t getFiberId() const { return m_fiberId; }
     uint64_t getTime() const { return m_time; }
     std::string getContent() const { return m_ss.str(); }
 
@@ -38,21 +54,6 @@ private:
     std::stringstream m_ss;        
 };
 
-//日志级别
-class LogLevel {
-public:
-    enum Level {
-        UNKOWN = 0,
-        DEBUG = 1,
-        INFO = 2,
-        WARN = 3,
-        ERROR = 4,
-        FATAL = 5,
-    };
-
-    static const char* ToString(LogLevel::Level level);
-};
-
 //日志格式器
 class LogFormatter {
 public:
@@ -60,6 +61,7 @@ public:
     LogFormatter(const std::string& pattern);
     //%t    %thred_id %m%n
     std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
+    std::ostream& format(std::ostream& ofs, std::shared_ptr<Logger>, LogLevel::Level level, LogEvent::ptr event);
 public:
     class FormatItem {
     public:
@@ -73,10 +75,12 @@ public:
 private:
     std::string m_pattern;
     std::vector<FormatItem::ptr> m_items;
+    bool m_error = false;
 };
 
 //日志输出地
 class LogAppender {
+friend class Logger;
 public:
     typedef std::shared_ptr<LogAppender> ptr;
     virtual ~LogAppender() {}
@@ -84,8 +88,9 @@ public:
     virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
     void setFormatter(LogFormatter::ptr val) {m_formatter = val;}
     LogFormatter::ptr getFormatter() const { return m_formatter; }
+    void setLevel(LogLevel::Level val) { m_level = val; }
 private:
-    LogLevel::Level m_level;
+    LogLevel::Level m_level = LogLevel::DEBUG;
     LogFormatter::ptr m_formatter;
 };
 
