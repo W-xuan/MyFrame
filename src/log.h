@@ -12,6 +12,7 @@
 namespace MyFrame {
 
 class Logger;
+class LoggerManager;
 //日志级别
 class LogLevel {
 public:
@@ -38,7 +39,7 @@ public:
     const char* getFile() const { return m_file; }
     int32_t getLine() const { return m_line; }
     uint32_t getElapse() const { return m_elapse; }
-    uint32_t getThreadId() const { return m_fiberId; }
+    uint32_t getThreadId() const { return m_threadId; }
     uint32_t getFiberId() const { return m_fiberId; }
     uint64_t getTime() const { return m_time; }
     std::string getContent() const { return m_ss.str(); }
@@ -66,7 +67,6 @@ public:
     class FormatItem {
     public:
         typedef std::shared_ptr<FormatItem> ptr; 
-        FormatItem(const std::string& fmt = "") {};
         virtual ~FormatItem() {}
         virtual void format(std::ostream& os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0; 
     };
@@ -86,10 +86,11 @@ public:
     virtual ~LogAppender() {}
 
     virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
-    void setFormatter(LogFormatter::ptr val) {m_formatter = val;}
-    LogFormatter::ptr getFormatter() const { return m_formatter; }
+    void setFormatter(LogFormatter::ptr val);
+    LogFormatter::ptr getFormatter();
+    LogLevel::Level getLevel() const { return m_level; }
     void setLevel(LogLevel::Level val) { m_level = val; }
-private:
+protected:
     LogLevel::Level m_level = LogLevel::DEBUG;
     LogFormatter::ptr m_formatter;
 };
@@ -125,7 +126,6 @@ class StdoutLogAppender : public LogAppender {
 public:
     typedef std::shared_ptr<StdoutLogAppender> ptr;
     void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
-private:
 };
 
 //输出到文件的Appender
