@@ -24,6 +24,35 @@ const char* LogLevel::ToString(LogLevel::Level level) {
     return "UNKNOW";
 }
 
+LogLevel::Level LogLevel::FromString(const std::string& str) {
+#define XX(level, v) \
+    if (str == #v) { \
+        return LogLevel::level; \
+    }
+    XX(DEBUG, debug);
+    XX(DEBUG, info);
+    XX(DEBUG, warn);
+    XX(DEBUG, error);
+    XX(DEBUG, fatal);
+    
+    XX(DEBUG, DEBUG);
+    XX(DEBUG, INFO);
+    XX(DEBUG, WARN);
+    XX(DEBUG, ERROR);
+    XX(DEBUG, FATAL);
+    return LogLevel::UNKOWN;
+#undef XX
+}
+
+LogEventWrap::LogEventWrap(LogEvent::ptr e)
+    :m_event(e) {
+
+}
+
+LogEventWrap::~LogEventWrap() {
+    m_event->getLogger()->log(m_event->getLevel(), m_event);
+}
+
 class MessageFormatItem : public LogFormatter::FormatItem {
 public:
     MessageFormatItem(const std::string& str = "") {}
