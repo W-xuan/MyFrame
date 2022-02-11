@@ -9,10 +9,33 @@
 #include <sstream>
 #include <fstream>
 
+// 使用流式方式将日志级别level的日志写入到logger
+#define MYFRAME_LOG_LEVEL(logger, level) \
+    if (logger->getLevel() <= level) \
+        MyFrame::LogEventWrap(MyFrame::LogEvent::ptr(new MyFrame::LogEvent(logger, level, \
+                            _FILE_, _LINE_, 0, MyFrame::GetThreadId(),\
+                        MyFrame::GetFiberId(), time(0), MyFrame::Thread::GetName()))).getss()
+
+// 使用流式方式将日志级别debug的日志写入发哦logger
+#define MYFRAME_LOG_DEBUG(logger) MYFRAME_LOG_LEVEL(logger, MyFrame::LogLevel::DEBUG)
+
+// 使用流式方式将日志级别info的日志写入到logger
+#define MYFRAME_LOG_INFO(logger) MYFRAME_LOG_LEVEL(logger, MyFrame::LogLevel::INFO)
+
+// 使用流式方式将日志级别warn的日志写入到logger
+#define MYFRAME_LOG_WARN(logger) MYFRAME_LOG_LEVEL(logger, MyFrame::LogLevel::WARN)
+
+// 使用流式方式将日志级别error的日志写入到logger
+#define MYFRAME_LOG_ERROR(logger) MYFRAME_LOG_LEVEL(logger, MyFrame::LogLevel::ERROR)
+
+// 使用流式方式将日志级别fatal的日志写入到logger
+#define MYFRAME_LOG_FATAL(logger) MYFRAME_LOG_LEVEL(logger, MyFrame::LogLevel::FATAL)
+
 namespace MyFrame {
 
 class Logger;
 class LoggerManager;
+
 //日志级别
 class LogLevel {
 public:
