@@ -6,8 +6,11 @@
 #include <memory>
 #include <list>
 #include <vector>
+#include <stdarg.h>
 #include <sstream>
 #include <fstream>
+#include <map>
+#include "util.h"
 
 // 使用流式方式将日志级别level的日志写入到logger
 #define MYFRAME_LOG_LEVEL(logger, level) \
@@ -31,6 +34,32 @@
 // 使用流式方式将日志级别fatal的日志写入到logger
 #define MYFRAME_LOG_FATAL(logger) MYFRAME_LOG_LEVEL(logger, MyFrame::LogLevel::FATAL)
 
+//使用格式化方式将日志级别level的日志写入到logger
+#define MYFRAME_LOG_FMT_LEVEL(logger, level, fmt, ...)\
+    if (logger->getLevel() <= level) \
+        MyFrame::LogEventWrap(MyFrame::LogEvent::ptr(new MyFrame::LogEvent(logger, level, \
+                            _FILE_, _LINE_, 0, MyFrame::GetThreadId(),\
+                        MyFrame::GetFiberId(), time(0), MyFrame::Thread::GetName()))).getEvent()->format(fmt, _VA_ARGS_)
+
+// 使用格式化方式方式将日志级别debug的日志写入到logger
+#define MYFRAME_LOG_FMT_DEBUG(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::DEBUG, fmt, _VA_ARGS_)
+
+// 使用格式化方式方式将日志级别info的日志写入到logger
+#define MYFRAME_LOG_FMT_INFO(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::INFO, fmt, _VA_ARGS_)
+
+// 使用格式化方式方式将日志级别warn的日志写入到logger
+#define MYFRAME_LOG_FMT_WARN(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::WARN, fmt, _VA_ARGS_)
+
+// 使用格式化方式方式将日志级别error的日志写入到logger
+#define MYFRAME_LOG_FMT_ERROR(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::ERROR, fmt, _VA_ARGS_)
+
+// 使用格式化方式方式将日志级别fatal的日志写入到logger
+#define MYFRAME_LOG_FMT_FATAL(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::FATAL, fmt, _VA_ARGS_)
+
+
+#define MYFRAME_LOG_ROOT() MyFrame::LoggerMgr::GetInstance()->getRoot()
+
+#define MYFRAME_LOG_NAME(name) MyFrame::LoggerMgr::Geet
 namespace MyFrame {
 
 class Logger;
@@ -65,7 +94,8 @@ class LogEvent {
 public:
     typedef std::shared_ptr<LogEvent> ptr;
     // 构造函数
-    LogEvent(const char* file, int32_t m_line, uint32_t getElapse
+    LogEvent(/*std::shared_ptr<Logger> logger, LogLevel::Level level
+            ,*/ const char* file, int32_t m_line, uint32_t elapse
             , uint32_t thread_id, uint32_t fiber_id, uint64_t time);
     // 返回文件名
     const char* getFile() const { return m_file; }
@@ -96,6 +126,12 @@ public:
     
     // 返回日志内容字符串流
     std::stringstream& getSS() { return m_ss; }
+
+    // 格式化写入日志内容
+    void format(const char* fmt, ...);
+
+    // 格式化写入日志内容
+    void format(const char* fmt, va_list al);
 private:
     //文件名
     const char* m_file = nullptr; 
@@ -122,8 +158,7 @@ private:
     std::shared_ptr<Logger> m_logger;
 
     // 日志等级
-    LogLevel::Level m_level;
-     
+    LogLevel::Level m_level; 
 };
 
 //日志事件包装器
@@ -140,7 +175,7 @@ public:
     LogEvent::ptr getEvent() const { return m_event; }
 
     // 获取日志内容流
-    std::stringstream& getss();
+    std::stringstream& getSS();
 private:
     // 日志事件
     LogEvent::ptr m_event;
@@ -163,6 +198,8 @@ public:
     };
 
     void init();
+    bool isError() const { return m_error;}
+    const std::string getPattern() const { return m_pattern;}
 private:
     std::string m_pattern;
     std::vector<FormatItem::ptr> m_items;
@@ -183,6 +220,7 @@ public:
     void setLevel(LogLevel::Level val) { m_level = val; }
 protected:
     LogLevel::Level m_level = LogLevel::DEBUG;
+     bool m_hasFormatter = false;
     LogFormatter::ptr m_formatter;
 };
 
@@ -191,21 +229,51 @@ class Logger : public std::enable_shared_from_this<Logger> {
 friend class LoggerManager;
 public:
     typedef std::shared_ptr<Logger> ptr;
-
+    
+    // 构造函数
     Logger(const std::string& name = "root");
+    
+    // 写日志
     void log(LogLevel::Level level, LogEvent::ptr event);
+    
+    // 写debug级别日志
     void debug(LogEvent::ptr event);
+    
+    // 写info级别日志
     void info(LogEvent::ptr event);
+    
+    // 写warn级别日志
     void warn(LogEvent::ptr event);
+    
+    // 写error级别日志
     void error(LogEvent::ptr event);
+    
+    // 写fatal级别日志
     void fatal(LogEvent::ptr event);
 
+    // 添加日志目标
     void addAppender(LogAppender::ptr appender);
+    
+    // 删除日志目标
     void delAppender(LogAppender::ptr appender);
+    
+    // 返回日志级别
     LogLevel::Level getLevel() const { return m_level; }
+    
+    // 设置日志级别
     void setLevel(LogLevel::Level val) { m_level = val; }
 
+    // 返回日志名称
     const std::string& getName() const { return m_name; }
+
+    // 设置日志格式器
+    void setFormatter(LogFormatter::ptr val);
+
+    // 设置日志格式模板
+    void setFormatter(const std::string& val);
+
+    // 获取日志格式器
+    LogFormatter::ptr getFormatter();
 private:
     // 日志名称
     std::string m_name;
