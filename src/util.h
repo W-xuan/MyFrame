@@ -6,11 +6,13 @@
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <stdio.h>
+#include <stdint.h>
 
 namespace MyFrame {
 
 pid_t GetThreadId();
 
+uint32_t GetFiberId();
 
 
 }

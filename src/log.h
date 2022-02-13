@@ -11,13 +11,14 @@
 #include <fstream>
 #include <map>
 #include "util.h"
+#include "singleton.h"
 
 // 使用流式方式将日志级别level的日志写入到logger
 #define MYFRAME_LOG_LEVEL(logger, level) \
     if (logger->getLevel() <= level) \
         MyFrame::LogEventWrap(MyFrame::LogEvent::ptr(new MyFrame::LogEvent(logger, level, \
-                            _FILE_, _LINE_, 0, MyFrame::GetThreadId(),\
-                        MyFrame::GetFiberId(), time(0), MyFrame::Thread::GetName()))).getss()
+                            __FILE__, __LINE__, 0, MyFrame::GetThreadId(),\
+                        MyFrame::GetFiberId(), time(0)))).getSS()
 
 // 使用流式方式将日志级别debug的日志写入到logger
 #define MYFRAME_LOG_DEBUG(logger) MYFRAME_LOG_LEVEL(logger, MyFrame::LogLevel::DEBUG)
@@ -35,31 +36,31 @@
 #define MYFRAME_LOG_FATAL(logger) MYFRAME_LOG_LEVEL(logger, MyFrame::LogLevel::FATAL)
 
 //使用格式化方式将日志级别level的日志写入到logger
-#define MYFRAME_LOG_FMT_LEVEL(logger, level, fmt, ...)\
+#define MYFRAME_LOG_FMT_LEVEL(logger, level, fmt, ...) \
     if (logger->getLevel() <= level) \
         MyFrame::LogEventWrap(MyFrame::LogEvent::ptr(new MyFrame::LogEvent(logger, level, \
-                            _FILE_, _LINE_, 0, MyFrame::GetThreadId(),\
-                        MyFrame::GetFiberId(), time(0), MyFrame::Thread::GetName()))).getEvent()->format(fmt, _VA_ARGS_)
+                            __FILE__, __LINE__, 0, MyFrame::GetThreadId(),\
+                        MyFrame::GetFiberId(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
 
 // 使用格式化方式方式将日志级别debug的日志写入到logger
-#define MYFRAME_LOG_FMT_DEBUG(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::DEBUG, fmt, _VA_ARGS_)
+#define MYFRAME_LOG_FMT_DEBUG(logger, fmt, ...) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::DEBUG, fmt, __VA_ARGS__)
 
 // 使用格式化方式方式将日志级别info的日志写入到logger
-#define MYFRAME_LOG_FMT_INFO(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::INFO, fmt, _VA_ARGS_)
+#define MYFRAME_LOG_FMT_INFO(logger, fmt, ...) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::INFO, fmt, __VA_ARGS__)
 
 // 使用格式化方式方式将日志级别warn的日志写入到logger
-#define MYFRAME_LOG_FMT_WARN(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::WARN, fmt, _VA_ARGS_)
+#define MYFRAME_LOG_FMT_WARN(logger, fmt, ...) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::WARN, fmt, __VA_ARGS__)
 
 // 使用格式化方式方式将日志级别error的日志写入到logger
-#define MYFRAME_LOG_FMT_ERROR(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::ERROR, fmt, _VA_ARGS_)
+#define MYFRAME_LOG_FMT_ERROR(logger, fmt, ...) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::ERROR, fmt, __VA_ARGS__)
 
 // 使用格式化方式方式将日志级别fatal的日志写入到logger
-#define MYFRAME_LOG_FMT_FATAL(logger) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::FATAL, fmt, _VA_ARGS_)
+#define MYFRAME_LOG_FMT_FATAL(logger, fmt, ...) MYFRAME_LOG_FMT_LEVEL(logger, MyFrame::LogLevel::FATAL, fmt, __VA_ARGS__)
 
 
 #define MYFRAME_LOG_ROOT() MyFrame::LoggerMgr::GetInstance()->getRoot()
 
-#define MYFRAME_LOG_NAME(name) MyFrame::LoggerMgr::Geet
+#define MYFRAME_LOG_NAME(name) MyFrame::LoggerMgr::GetInstance()->getLogger(name)
 namespace MyFrame {
 
 class Logger;
@@ -94,8 +95,8 @@ class LogEvent {
 public:
     typedef std::shared_ptr<LogEvent> ptr;
     // 构造函数
-    LogEvent(/*std::shared_ptr<Logger> logger, LogLevel::Level level
-            ,*/ const char* file, int32_t m_line, uint32_t elapse
+    LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level
+            , const char* file, int32_t m_line, uint32_t elapse
             , uint32_t thread_id, uint32_t fiber_id, uint64_t time);
     // 返回文件名
     const char* getFile() const { return m_file; }
@@ -328,6 +329,8 @@ private:
     // 主日志器
     Logger::ptr m_root;
 };
+
+typedef MyFrame::Singleton<LoggerManager> LoggerMgr;
 
 }
 

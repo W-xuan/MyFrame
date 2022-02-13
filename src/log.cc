@@ -184,15 +184,17 @@ private:
     std::string m_string;
 };
 
-LogEvent::LogEvent(/*std::shared_ptr<Logger> logger, LogLevel::Level level 
-        , */const char* file, int32_t line, uint32_t elapse
+LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level 
+        , const char* file, int32_t line, uint32_t elapse
         , uint32_t thread_id, uint32_t fiber_id, uint64_t time)
         :m_file(file)
         ,m_line(line)
         ,m_elapse(elapse)
         ,m_threadId(thread_id)
         ,m_fiberId(fiber_id)
-        ,m_time(time) {
+        ,m_time(time) 
+        ,m_logger(logger) 
+        ,m_level(level){   
 }
 
 Logger::Logger(const std::string& name)
@@ -246,8 +248,12 @@ void Logger::delAppender(LogAppender::ptr appender) {
 void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
     if (level >= m_level) {
         auto self = shared_from_this();
-        for (auto& i : m_appenders) {
-            i->log(self, level, event);
+        if(!m_appenders.empty()) {
+            for(auto& i : m_appenders) {
+                i->log(self, level, event);
+            }
+        } else if(m_root) {
+            m_root->log(level, event);
         }
     }
 }
@@ -274,7 +280,7 @@ void Logger::fatal(LogEvent::ptr event) {
 
 FileLogAppender::FileLogAppender(const std::string& filename) 
     :m_filename(filename){
-
+    reopen();
 }
 
 void FileLogAppender::log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) {
@@ -397,7 +403,7 @@ void LogFormatter::init() {
         XX(m, MessageFormatItem),           //m:消息
         XX(p, LevelFormatItem),             //p:日志级别
         XX(r, ElapseFormatItem),            //r:累计毫秒数
-//      XX(c, NameFormatItem),              //c:日志名称
+//        XX(c, NameFormatItem),              //c:日志名称
         XX(t, ThreadIdFormatItem),          //t:线程id
         XX(n, NewLineFormatItem),           //n:换行
         XX(d, DateTimeFormatItem),          //d:时间
