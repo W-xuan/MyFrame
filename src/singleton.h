@@ -2,6 +2,7 @@
 #define __MYFRAME_SINGLETON_H__
 
 #include <memory>
+#include "log.h"
 
 namespace MyFrame {
 

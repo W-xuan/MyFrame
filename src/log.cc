@@ -433,4 +433,16 @@ void LogFormatter::init() {
     //std::cout << m_items.size() << std::endl;
 }
 
+LoggerManager::LoggerManager() {
+    m_root.reset(new Logger);
+    m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
+
+    m_loggers[m_root->m_name] = m_root;
+
+    init();
+}
+void LoggerManager::init() {
+}
+
+
 }

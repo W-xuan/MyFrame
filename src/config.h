@@ -6,6 +6,7 @@
 #include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <map>
+#include "log.h"
 
 namespace MyFrame {
 
@@ -36,7 +37,7 @@ public:
     virtual bool fromString(const std::string& val) = 0;
 
     // 返回配置参数值的类型名称
-    virtual std::string getTypeName() const = 0;
+    //virtual std::string getTypeName() const = 0;
 protected:
     std::string m_name;
     std::string m_description;
@@ -74,17 +75,21 @@ public:
         }
         return false;
     }
+
+    const T getValue() const { return m_val; }
+    void setValue(const T& v) { m_val = v; }
 private:
     T m_val;
 };
 
 class Config {
+public:    
     typedef std::map<std::string, ConfigVarBase::ptr> ConfigVarMap;
 
     template<class T>
     static typename ConfigVar<T>::ptr Lookup(const std::string& name,
             const T& default_value, const std::string& description = "") {
-        auto tmp = Lookup<T>{name};
+        auto tmp = Lookup<T>(name);
         if (tmp) {
             MYFRAME_LOG_INFO(MYFRAME_LOG_ROOT()) << "Lookup name=" << name << "exists";
             return tmp;
@@ -96,19 +101,22 @@ class Config {
             throw std::invalid_argument(name);
         }
 
-        typename ConfigVar<T>::ptr v(new ConfigVar<T>)
+        typename ConfigVar<T>::ptr v(new ConfigVar<T>(name, default_value, description));
+        s_datas[name] = v;
+        return v;
     }
 
     //查找配置参数,返回配置参数名为name的配置参数
     template<class T>
     static typename ConfigVar<T>::ptr Lookup(const std::string& name) {
-        auto it = GetDatas().find(name);
-        if(it == GetDatas().end()) {
+        auto it = s_datas.find(name);
+        if(it == s_datas.end()) {
             return nullptr;
         }
         return std::dynamic_pointer_cast<ConfigVar<T> >(it->second);
     }
-
+private:
+    static ConfigVarMap s_datas;
 };
 
 }
